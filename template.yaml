@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SAM template to deploy student stress analysis app
+
+Globals:
+  Function:
+    Timeout: 10
+
+Resources:
+  CsvProcessorLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: process_csv.handler
+      Runtime: python3.11
+      Timeout: 120
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /datasets/{id}
+            Method: post
+      Environment:
+        Variables:
+          PGHOST: "host.docker.internal"
+          PGUSER: "postgres"
+          PGPASSWORD: "example" # TODO get this from AWS Secrets Manager or SSM Parameter Store
+          PGDATABASE: "users"
+          PGPORT: "5432"
+          OLLAMA_URL: http://host.docker.internal:11434/api/generate
+          OLLAMA_MODEL: gemma3n:e2b # llama3 deepseek-r1:1.5b
+          STRESS_THRESHOLD: "50.0" # Threshold for determining if a student is stressed
+          LOG_LEVEL: "DEBUG"
+
+  AlertsLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: alerts.handler
+      Runtime: python3.11
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /alerts
+            Method: get
+      Environment:
+        Variables:
+          PGHOST: "host.docker.internal"
+          PGUSER: "postgres"
+          PGPASSWORD: "example"
+          PGDATABASE: "users"
+          PGPORT: "5432"
+          LOG_LEVEL: "DEBUG"
+
+Outputs:
+  CsvApiUrl:
+    Description: "API Gateway endpoint for student stress analysis"
+    Value:
+      Fn::Sub: "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/datasets/{id}"
+  AlertsApiUrl:
+    Description: "API Gateway endpoint for alerts"
+    Value:
+      Fn::Sub: "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/alerts"

@@ -1,0 +1,31 @@
+services:
+  postgres:
+    # pin to a version that's compatible with Aurora so we don't dev against a potentially-incompatible version https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/USER_UpgradeDBInstance.PostgreSQL.UpgradeVersion.html
+    image: postgres:17.5@sha256:4d89c904835259bc58876520e56267ca07a4ebd6a027f7814bbbf91b50d685be
+    container_name: postgres
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: users
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  ollama:
+    build:
+      context: ./ollama
+      dockerfile: Dockerfile
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      OLLAMA_HOST: "0.0.0.0"
+    restart: unless-stopped
+    command: ["gemma3n:e2b"] #llama3 deepseek-r1:1.5b
+
+volumes:
+  postgres_data:
+  ollama_data:

@@ -1,0 +1,14 @@
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS HighStressUsers (
+  id SERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id),
+  is_stressed BOOLEAN NOT NULL,
+  stress_score NUMERIC,
+  analysis TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

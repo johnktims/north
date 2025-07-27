@@ -1,0 +1,3 @@
+# exclude everything by default and explicitly add artifacts to ensure build context doesn't become bloated over time
+**
+!start.sh
